@@ -6,38 +6,19 @@ import Image from "next/image";
 import Link from "next/link";
 import axios from "axios";
 import clsx from "clsx";
+import { Phone, PlatformOffer } from "@/types/phone";
 
-interface PlatformOffer {
-  merchant: string;
-  price: number;
-  url: string;
-  rating: number;
-  reviews: number;
-}
-
-interface Phone {
-  name: string;
-  gamingScore: number;
-  antutu: number;
-  camera: string;
-  battery: string;
-  display: string;
-  chipset: string;
-  image: string;
-  offers: PlatformOffer[];
+interface BudgetPhonesRankingProps {
+  title: string;
+  products: Phone[];
 }
 
 type SortOption = "gaming" | "priceLow" | "camera" | "antutu";
 
-interface BudgetPhonesProps {
-  title: string;
-  products: any[];
-}
-
 export default function BudgetPhonesRanking({
   title,
   products,
-}: BudgetPhonesProps) {
+}: BudgetPhonesRankingProps) {
   const [phones, setPhones] = useState<Phone[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("gaming");
   const [loading, setLoading] = useState(true);
@@ -46,8 +27,8 @@ export default function BudgetPhonesRanking({
   useEffect(() => {
     const fetchPhones = async () => {
       try {
-        const response = await axios.get("/api/phones");
-        setPhones(response.data); // API should return array of phones
+        const response = await axios.get<Phone[]>("/api/phones");
+        setPhones(response.data);
       } catch (err) {
         console.error("Failed to fetch phones:", err);
       } finally {
@@ -83,7 +64,6 @@ export default function BudgetPhonesRanking({
       };
       return getMP(b.camera) - getMP(a.camera);
     }
-
     if (sortBy === "antutu") return b.antutu - a.antutu;
     return 0;
   });
@@ -189,87 +169,79 @@ export default function BudgetPhonesRanking({
                   {phone.antutu.toLocaleString()}
                 </td>
                 <td className="p-2 sm:p-3">
-                  <td className="p-2 sm:p-3">
-                    <div className="space-y-2">
-                      {phone.offers.map((offer, i) => {
-                        const minPrice = Math.min(
-                          ...phone.offers.map((o) => o.price)
-                        );
-                        const maxRating = Math.max(
-                          ...phone.offers.map((o) => o.rating)
-                        );
-                        const isBestDeal = offer.price === minPrice;
-                        const isTopRated = offer.rating === maxRating;
+                  <div className="space-y-2">
+                    {phone.offers.map((offer, i) => {
+                      const minPrice = Math.min(
+                        ...phone.offers.map((o) => o.price)
+                      );
+                      const maxRating = Math.max(
+                        ...phone.offers.map((o) => o.rating)
+                      );
+                      const isBestDeal = offer.price === minPrice;
+                      const isTopRated = offer.rating === maxRating;
 
-                        return (
-                          <div
-                            key={i}
-                            className={clsx(
-                              "relative grid grid-rows-[auto_auto] gap-1 p-2 sm:p-3 rounded-xl shadow-md transition-all text-xs sm:text-sm w-[40vh]",
-                              isBestDeal
-                                ? "bg-green-100/70 dark:bg-green-700/50 ring-2 ring-green-400"
-                                : "bg-white/70 dark:bg-gray-800/60"
-                            )}
-                          >
-                            {/* BEST DEAL Badge */}
-                            {isBestDeal && (
-                              <span className="absolute -top-2 -left-2 bg-green-500 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
-                                BEST DEAL
-                              </span>
-                            )}
-
-                            {/* Top row */}
-                            <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
-                              <span className="font-medium truncate">
-                                {offer.merchant}
-                              </span>
-                              <span
-                                className={clsx(
-                                  "font-bold",
-                                  isBestDeal
-                                    ? "text-green-700 dark:text-green-200"
-                                    : "text-gray-900 dark:text-gray-100"
-                                )}
-                              >
-                                ₱{offer.price.toLocaleString()}{" "}
-                                {isBestDeal && "🏆"}
-                              </span>
-                              <span
-                                className={clsx(
-                                  "font-semibold",
-                                  isTopRated
-                                    ? "text-yellow-600 dark:text-yellow-300"
-                                    : "text-gray-500"
-                                )}
-                              >
-                                ⭐ {offer.rating} {isTopRated && "🏅"}
-                              </span>
-                            </div>
-
-                            {/* Bottom row */}
-                            <div className="flex justify-between items-center mt-1">
-                              <span className="inline-block bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full shadow-sm">
-                                {offer.reviews} review
-                                {offer.reviews !== 1 ? "s" : ""}
-                              </span>
-
-                              <a
-                                href={offer.url}
-                                onClick={() =>
-                                  handleTrackClick(phone.name, offer)
-                                }
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-3 sm:px-5 py-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-[10px] sm:text-xs font-semibold shadow hover:shadow-lg transition"
-                              >
-                                Go
-                              </a>
-                            </div>
+                      return (
+                        <div
+                          key={i}
+                          className={clsx(
+                            "relative grid grid-rows-[auto_auto] gap-1 p-2 sm:p-3 rounded-xl shadow-md transition-all text-xs sm:text-sm w-[40vh]",
+                            isBestDeal
+                              ? "bg-green-100/70 dark:bg-green-700/50 ring-2 ring-green-400"
+                              : "bg-white/70 dark:bg-gray-800/60"
+                          )}
+                        >
+                          {isBestDeal && (
+                            <span className="absolute -top-2 -left-2 bg-green-500 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                              BEST DEAL
+                            </span>
+                          )}
+                          <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+                            <span className="font-medium truncate">
+                              {offer.merchant}
+                            </span>
+                            <span
+                              className={clsx(
+                                "font-bold",
+                                isBestDeal
+                                  ? "text-green-700 dark:text-green-200"
+                                  : "text-gray-900 dark:text-gray-100"
+                              )}
+                            >
+                              ₱{offer.price.toLocaleString()}{" "}
+                              {isBestDeal && "🏆"}
+                            </span>
+                            <span
+                              className={clsx(
+                                "font-semibold",
+                                isTopRated
+                                  ? "text-yellow-600 dark:text-yellow-300"
+                                  : "text-gray-500"
+                              )}
+                            >
+                              ⭐ {offer.rating} {isTopRated && "🏅"}
+                            </span>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </td>
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="inline-block bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full shadow-sm">
+                              {offer.reviews} review
+                              {offer.reviews !== 1 ? "s" : ""}
+                            </span>
+                            <a
+                              href={offer.url}
+                              onClick={() =>
+                                handleTrackClick(phone.name, offer)
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 sm:px-5 py-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-[10px] sm:text-xs font-semibold shadow hover:shadow-lg transition"
+                            >
+                              Go
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </td>
               </motion.tr>
             ))}
@@ -287,7 +259,6 @@ export default function BudgetPhonesRanking({
             transition={{ delay: index * 0.05 }}
             className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 space-y-3"
           >
-            {/* Header: Rank + Name + Antutu */}
             <div className="flex items-center gap-3">
               <Image
                 src={phone.image}
@@ -306,14 +277,12 @@ export default function BudgetPhonesRanking({
               </div>
             </div>
 
-            {/* Specs */}
             <div className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
               📸 {phone.camera} <br />
               📱 {phone.display} <br />⚡ {phone.chipset} <br />
               🔋 {phone.battery}
             </div>
 
-            {/* Offers */}
             <div className="space-y-2">
               {phone.offers.map((offer, i) => {
                 const minPrice = Math.min(...phone.offers.map((o) => o.price));
@@ -338,8 +307,6 @@ export default function BudgetPhonesRanking({
                         BEST DEAL
                       </span>
                     )}
-
-                    {/* Merchant / Price / Rating */}
                     <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
                       <span className="font-medium truncate">
                         {offer.merchant}
@@ -365,8 +332,6 @@ export default function BudgetPhonesRanking({
                         ⭐ {offer.rating} {isTopRated && "🏅"}
                       </span>
                     </div>
-
-                    {/* Reviews + Link */}
                     <div className="flex justify-between items-center mt-1">
                       <span className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-[10px] px-2 py-0.5 rounded-full shadow-sm">
                         {offer.reviews} review{offer.reviews !== 1 ? "s" : ""}

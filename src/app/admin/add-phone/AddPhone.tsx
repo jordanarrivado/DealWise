@@ -167,8 +167,12 @@ export default function PhoneForm() {
           },
         ],
       });
-    } catch (err: any) {
-      Swal.fire("Error", err.message || "Something went wrong!", "error");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        Swal.fire("Error", err.message, "error");
+      } else {
+        Swal.fire("Error", "Something went wrong!", "error");
+      }
     } finally {
       setLoading(false);
     }

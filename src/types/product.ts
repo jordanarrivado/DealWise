@@ -1,13 +1,13 @@
+// types/product.ts
 export interface Offer {
   merchant: string;
-  price: number;   // must always be number
+  price: number;
   url: string;
-  rating: number;  // number, default 0
-  reviews: number; // number, default 0
+  rating: number;
+  reviews: number;
 }
 
 export interface Product {
-  _id: string;
   title: string;
   category?: string;
   image: string;
@@ -15,3 +15,6 @@ export interface Product {
   desc?: string[];
 }
 
+export interface ProductComparisonProps {
+  products: Product[];
+}

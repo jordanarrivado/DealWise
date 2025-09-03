@@ -1,8 +1,8 @@
 import BudgetPhonesRanking from "@/app/guides/top-10-budget-phone-below-10000/BudgetPhonesRanking";
-import { Product } from "@/types/product";
+import { Phone } from "@/types/phone";
 
 type BudgetPhonesSectionProps = {
-  products: Product[];
+  products: Phone[];
 };
 
 export default function BudgetPhonesSection({

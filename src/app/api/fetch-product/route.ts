@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import ogs from "open-graph-scraper"; // npm install open-graph-scraper
 
-function normalizeImage(img: any): string {
+type OGImage = { url?: string } | string;
+type OGImageInput = OGImage | OGImage[] | null | undefined;
+
+function normalizeImage(img: OGImageInput): string {
   if (!img) return "";
-  if (Array.isArray(img)) return img[0]?.url || "";
+  if (Array.isArray(img)) {
+    const first = img[0];
+    return typeof first === "string" ? first : first?.url || "";
+  }
   if (typeof img === "object") return img.url || "";
   return img;
 }
@@ -17,14 +23,13 @@ export async function POST(req: Request) {
 
     const { result } = await ogs({ url });
 
-    // Example: transform OG data into your product shape
     const product = {
       title: result.ogTitle || result.twitterTitle || "Untitled",
       description: result.ogDescription || "",
       siteName: result.ogSiteName || result.twitterSite || "",
       url: result.ogUrl || result.requestUrl || url,
       image: normalizeImage(result.ogImage) || normalizeImage(result.twitterImage) || "",
-      price: "", // optional: fill manually or scrape separately
+      price: "",
     };
 
     return NextResponse.json(product);

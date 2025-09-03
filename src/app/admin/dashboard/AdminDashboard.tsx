@@ -29,6 +29,14 @@ import AddPhone from "../add-phone/AddPhone";
 import Items from "./Items";
 import ClickTrack from "./ClickTrack";
 
+// ---- New types ----
+interface ChartData {
+  merchant: string;
+  count: number;
+}
+
+type ClickData = { merchant: string; count: number };
+
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
@@ -42,7 +50,7 @@ export default function AdminDashboard() {
   >("dashboard");
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
   const { counts, loading } = useProductCounts();
   const { data: session } = useSession();
 
@@ -70,18 +78,25 @@ export default function AdminDashboard() {
     const fetchClicks = async () => {
       try {
         const res = await fetch("/api/trackClick");
-        const data = await res.json();
-        // group by merchant for chart
-        const grouped = data.reduce((acc: any, item: any) => {
-          acc[item.merchant] = (acc[item.merchant] || 0) + item.count;
-          return acc;
-        }, {});
-        setChartData(
-          Object.entries(grouped).map(([merchant, count]) => ({
-            merchant,
-            count,
-          }))
-        );
+        const data: unknown = await res.json();
+
+        // Ensure we only process valid data
+        if (Array.isArray(data)) {
+          const grouped = (data as ClickData[]).reduce<Record<string, number>>(
+            (acc, item) => {
+              acc[item.merchant] = (acc[item.merchant] || 0) + item.count;
+              return acc;
+            },
+            {}
+          );
+
+          setChartData(
+            Object.entries(grouped).map(([merchant, count]) => ({
+              merchant,
+              count,
+            }))
+          );
+        }
       } catch (err) {
         console.error("Failed to load chart data:", err);
       }
@@ -250,7 +265,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
 
-              {/* ✅ Chart with Recharts */}
+              {/* Chart with Recharts */}
               <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow h-80">
                 <h2 className="text-lg font-bold mb-4 text-gray-700 dark:text-gray-300">
                   Click Analytics

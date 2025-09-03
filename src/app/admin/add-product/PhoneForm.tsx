@@ -4,6 +4,28 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Swal from "sweetalert2";
 
+interface Offer {
+  merchant: string;
+  price: string;
+  url: string;
+  rating: string;
+  reviews: string;
+}
+
+interface ProductForm {
+  title: string;
+  category: string;
+  desc: string[];
+  offers: Offer[];
+  imageBase64: string;
+}
+
+interface OfferFormProps {
+  offer: Offer;
+  index: number;
+  onChange: (index: number, field: keyof Offer, value: string) => void;
+}
+
 // Suggestions for common fields (optional)
 const suggestions: Record<string, string[]> = {
   category: [
@@ -25,8 +47,14 @@ const offerSuggestions: Record<string, string[]> = {
 };
 
 // Child component for offers
-function OfferForm({ offer, index, onChange }: any) {
-  const fields = [
+function OfferForm({ offer, index, onChange }: OfferFormProps) {
+  const fields: {
+    name: keyof Offer;
+    type: string;
+    placeholder: string;
+    step?: string;
+    full?: boolean;
+  }[] = [
     { name: "merchant", type: "text", placeholder: "Merchant" },
     { name: "price", type: "number", placeholder: "Price" },
     { name: "url", type: "url", placeholder: "URL", full: true },
@@ -42,7 +70,7 @@ function OfferForm({ offer, index, onChange }: any) {
             list={offerSuggestions[name] ? `${name}-list-${index}` : undefined}
             {...rest}
             className="border p-2 rounded w-full"
-            value={offer[name as keyof typeof offer]}
+            value={offer[name]}
             onChange={(e) => onChange(index, name, e.target.value)}
             required
           />
@@ -60,7 +88,7 @@ function OfferForm({ offer, index, onChange }: any) {
 }
 
 export default function AddProduct() {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProductForm>({
     title: "",
     category: "",
     desc: [""],
@@ -73,7 +101,7 @@ export default function AddProduct() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm({ ...form, [name]: value } as ProductForm);
   };
 
   const handleDescChange = (index: number, value: string) => {
@@ -84,9 +112,13 @@ export default function AddProduct() {
 
   const addDesc = () => setForm({ ...form, desc: [...form.desc, ""] });
 
-  const handleOfferChange = (index: number, field: string, value: string) => {
+  const handleOfferChange = (
+    index: number,
+    field: keyof Offer,
+    value: string
+  ) => {
     const updatedOffers = [...form.offers];
-    updatedOffers[index][field as keyof (typeof updatedOffers)[0]] = value;
+    updatedOffers[index][field] = value;
     setForm({ ...form, offers: updatedOffers });
   };
 
@@ -114,15 +146,13 @@ export default function AddProduct() {
     setLoading(true);
 
     try {
-      const numericOfferKeys = ["price", "rating", "reviews"];
       const formatted = {
         ...form,
         offers: form.offers.map((offer) => ({
           ...offer,
-          ...numericOfferKeys.reduce((acc, key) => {
-            acc[key] = Number((offer as any)[key] || 0);
-            return acc;
-          }, {} as any),
+          price: Number(offer.price) || 0,
+          rating: Number(offer.rating) || 0,
+          reviews: Number(offer.reviews) || 0,
         })),
       };
 
@@ -151,11 +181,13 @@ export default function AddProduct() {
         offers: [{ merchant: "", price: "", url: "", rating: "", reviews: "" }],
         imageBase64: "",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Something went wrong!";
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: err.message || "Something went wrong!",
+        text: message,
         confirmButtonColor: "#dc2626",
       });
     } finally {

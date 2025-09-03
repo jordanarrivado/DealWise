@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ProductComparison from "./ProductComparison";
-import { Product } from "@/types/product";
+import type { Product } from "@/types/product";
 
 export default function ProductsPageClient() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -12,16 +12,20 @@ export default function ProductsPageClient() {
     const fetchProducts = async () => {
       try {
         const res = await fetch("/api/products");
-        const data = await res.json();
+        const data: Product[] = await res.json(); // TypeScript knows this is Product[]
 
-        const parsedProducts: Product[] = data.map((p: any) => ({
+        // Optional: ensure all numeric fields are actually numbers
+        const parsedProducts: Product[] = data.map((p) => ({
           ...p,
-          offers: (p.offers || []).map((o: any) => ({
-            ...o,
+          offers: (p.offers || []).map((o) => ({
+            merchant: o.merchant,
             price: Number(o.price),
-            rating: Number(o.rating),
-            reviews: Number(o.reviews),
+            url: o.url,
+            rating: Number(o.rating ?? 0),
+            reviews: Number(o.reviews ?? 0),
           })),
+          category: p.category ?? "",
+          desc: p.desc ?? [],
         }));
 
         setProducts(parsedProducts);
@@ -31,6 +35,7 @@ export default function ProductsPageClient() {
         setLoading(false);
       }
     };
+
     fetchProducts();
   }, []);
 
@@ -38,5 +43,15 @@ export default function ProductsPageClient() {
   if (products.length === 0)
     return <p className="text-center mt-10">No products found.</p>;
 
-  return <ProductComparison products={products} />;
+  return (
+    <ProductComparison
+      products={products.map((p) => ({
+        title: p.title,
+        image: p.image,
+        category: p.category,
+        offers: p.offers,
+        desc: p.desc,
+      }))}
+    />
+  );
 }

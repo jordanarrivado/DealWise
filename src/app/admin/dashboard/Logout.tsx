@@ -2,7 +2,12 @@
 import { signOut } from "next-auth/react";
 import { FaBell } from "react-icons/fa";
 
-export function Header({ toggleSidebar, sidebarOpen }: any) {
+interface HeaderProps {
+  toggleSidebar: () => void;
+  sidebarOpen: boolean;
+}
+
+export function Header({ toggleSidebar, sidebarOpen }: HeaderProps) {
   return (
     <header className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 shadow">
       <div className="flex items-center gap-4">

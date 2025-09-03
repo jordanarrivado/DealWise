@@ -1,5 +1,5 @@
 import mongoose, { Schema, model, models, Document } from "mongoose";
-import type { Product as ProductType, Offer } from "@/types/product"; // your interfaces
+import type { Product as ProductType, Offer } from "@/types/phone"; // your interfaces
 
 // --- Offer schema ---
 const OfferSchema = new Schema<Offer>(

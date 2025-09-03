@@ -5,27 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import clsx from "clsx";
-
-// Offer & Product types remain the same
-interface Offer {
-  merchant: string;
-  price: number;
-  url: string;
-  rating: number;
-  reviews: number;
-}
-
-interface Product {
-  title: string;
-  category?: string;
-  image: string;
-  offers: Offer[];
-  desc?: string[];
-}
-
-interface ProductComparisonProps {
-  products: Product[];
-}
+import { ProductComparisonProps } from "@/types/product";
 
 type SortOption = "priceLow" | "rating";
 

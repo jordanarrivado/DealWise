@@ -3,17 +3,23 @@ import { connectDB } from "@/lib/mongodb";
 import { Phone, PhonesOffers } from "@/models/Phones";
 import cloudinary from "@/lib/cloudinary";
 
+interface OfferInput {
+  merchant: string;
+  price: number | string;
+  url: string;
+  rating?: number | string;
+  reviews?: number | string;
+}
+
 export async function GET() {
   try {
     await connectDB();
 
     const phones = await Phone.find().sort({ createdAt: -1 }).lean();
 
-    // Attach offers
     const phonesWithOffers = await Promise.all(
       phones.map(async (phone) => {
         const offers = await PhonesOffers.find({ phoneId: phone._id }).lean();
-
         return {
           ...phone,
           offers: offers.map((o) => ({
@@ -28,9 +34,13 @@ export async function GET() {
     );
 
     return NextResponse.json(phonesWithOffers);
-  } catch (err: any) {
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error("GET /api/phones error:", err.message);
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
     console.error("GET /api/phones error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
@@ -39,7 +49,6 @@ export async function POST(req: Request) {
     await connectDB();
     const data = await req.json();
 
-    // Validate required fields (image is optional)
     if (
       !data.name ||
       data.gamingScore == null ||
@@ -57,21 +66,18 @@ export async function POST(req: Request) {
       );
     }
 
-    // Upload image if provided
     let imageUrl = "";
     if (data.imageBase64) {
       try {
         const upload = await cloudinary.uploader.upload(data.imageBase64, {
           folder: "phones",
         });
-        //console.log("Cloudinary upload result:", upload);
         imageUrl = upload.secure_url;
       } catch (err) {
         console.warn("Cloudinary upload failed, proceeding without image.", err);
       }
     }
 
-    // Create phone
     const phone = await Phone.create({
       name: data.name,
       gamingScore: Number(data.gamingScore),
@@ -80,12 +86,11 @@ export async function POST(req: Request) {
       battery: data.battery,
       display: data.display,
       chipset: data.chipset,
-      image: imageUrl, // will save empty string if no image
+      image: imageUrl,
     });
 
-    // Create offers linked to phone
     const offers = await PhonesOffers.insertMany(
-      data.offers.map((offer: any) => ({
+      data.offers.map((offer: OfferInput) => ({
         phoneId: phone._id,
         merchant: offer.merchant,
         price: Number(offer.price),
@@ -99,12 +104,15 @@ export async function POST(req: Request) {
       ...phone.toObject(),
       offers,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error("POST /api/phones error:", err.message);
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
     console.error("POST /api/phones error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
-
 
 export async function DELETE(req: Request) {
   try {
@@ -120,7 +128,6 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // Find the phone first
     const phone = await Phone.findById(id);
     if (!phone) {
       return NextResponse.json(
@@ -129,10 +136,8 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // ✅ Delete Cloudinary image if exists
     if (phone.image) {
       try {
-        // Extract public_id from the URL (phones/xxxx)
         const publicId = phone.image.split("/phones/")[1]?.split(".")[0];
         if (publicId) {
           await cloudinary.uploader.destroy(`phones/${publicId}`);
@@ -142,15 +147,16 @@ export async function DELETE(req: Request) {
       }
     }
 
-    // ✅ Delete phone
     await Phone.findByIdAndDelete(id);
-
-    // ✅ Delete related offers
     await PhonesOffers.deleteMany({ phoneId: id });
 
     return NextResponse.json({ success: true, message: "Phone deleted." });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error("DELETE /api/phones error:", err.message);
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
     console.error("DELETE /api/phones error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

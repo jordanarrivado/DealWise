@@ -23,8 +23,12 @@ export async function GET(req: NextRequest) {
     }).lean();
 
     return NextResponse.json({ exists: !!exists });
-  } catch (err: any) {
-    console.error("checkName error:", err);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error("checkName error:", err.message);
+    } else {
+      console.error("checkName error:", err);
+    }
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

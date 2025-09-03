@@ -1,7 +1,8 @@
-import NextAuth from "next-auth";
+import NextAuth, { type AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import type { User } from "next-auth";
 
-export const authOptions = {
+export const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -9,12 +10,9 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user }: any) {
+    async signIn({ user }: { user: User }) {
       const allowedEmail = process.env.ALLOWED_EMAIL;
-      if (user.email === allowedEmail) {
-        return true; 
-      }
-      return false; 
+      return user.email === allowedEmail;
     },
   },
 };
