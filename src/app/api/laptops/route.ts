@@ -53,7 +53,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Laptop ID is required" }, { status: 400 });
     }
 
-    let updateData = { ...data };
+    const updateData = { ...data };
 
     // If new image provided, upload to cloudinary
     if (data.imageBase64) {
@@ -79,6 +79,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
+
 
 // DELETE
 export async function DELETE(req: Request) {

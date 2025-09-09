@@ -82,7 +82,7 @@ export async function PUT(req: Request) {
     }
 
     const { imageBase64, ...rest } = body;
-    let updateData: Partial<SketchType> = { ...rest };
+    const updateData: Partial<SketchType> = { ...rest };
 
     if (imageBase64) {
       const upload = await cloudinary.uploader.upload(imageBase64, {
