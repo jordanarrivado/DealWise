@@ -44,6 +44,7 @@ export async function GET() {
 }
 
 // UPDATE (PUT)
+// UPDATE (PUT)
 export async function PUT(req: Request) {
   try {
     await connectDB();
@@ -53,7 +54,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Headphone ID is required" }, { status: 400 });
     }
 
-    let updateData = { ...data };
+    const updateData = { ...data }; // ✅ changed let → const
 
     if (data.imageBase64) {
       const upload = await cloudinary.uploader.upload(data.imageBase64, {
@@ -78,6 +79,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
+
 
 // DELETE
 export async function DELETE(req: Request) {
