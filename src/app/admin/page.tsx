@@ -6,7 +6,12 @@ import Link from "next/link";
 export default async function ProtectedAdminDashboard() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user?.email !== process.env.ALLOWED_EMAIL) {
+  const emailOne = process.env.ALLOWED_EMAIL1;
+  const emailTwo = process.env.ALLOWED_EMAIL2;
+  if (
+    !session ||
+    (session.user?.email !== emailOne && session.user?.email !== emailTwo)
+  ) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-red-50 space-y-4">
         <p className="text-lg font-semibold text-red-600">
