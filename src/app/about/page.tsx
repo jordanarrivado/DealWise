@@ -30,7 +30,7 @@ export default function AboutPage() {
             About Us
           </h1>
           <p className="mt-4 text-lg text-gray-600 leading-relaxed text-center">
-            We curate the best deals across top platforms—so you spend less time
+            We curate the best deals across top platforms so you spend less time
             searching and more time saving.{" "}
             <span className="font-semibold text-gray-800">
               All links are 100% legit and sourced directly from official
@@ -47,16 +47,16 @@ export default function AboutPage() {
 
         {/* Mission */}
         <Section
-          icon={<Info className="w-6 h-6 text-blue-600" />}
+          icon={<Info className="w-6 h-6 text-blue-600 text-center" />}
           title="Our Mission"
-          body="At DealWise, our mission is simple: make shopping smarter. We bring together products from Shopee, TikTok Shop, Amazon, and other trusted platforms—organized, comparable, and easy to browse."
+          body="At DealWise, our mission is simple: make shopping smarter. We bring together products from Shopee, TikTok Shop, Amazon, and other trusted platforms organized, comparable, and easy to browse."
         />
 
         {/* Review Process */}
         <Section
           icon={<SearchCheck className="w-6 h-6 text-indigo-600" />}
           title="Our Review Process"
-          body="We evaluate every product using verified ratings, technical specs, and real pricing data. No paid placements—rankings are purely data-driven and updated regularly to reflect new deals."
+          body="We evaluate every product using verified ratings, technical specs, and real pricing data. No paid placements rankings are purely data-driven and updated regularly to reflect new deals."
         />
 
         {/* How It Works */}
@@ -95,12 +95,12 @@ export default function AboutPage() {
             "@context": "https://schema.org",
             "@type": "Organization",
             name: "DealWise",
-            url: "https://www.dealwise.com",
+            url: "https://www.deal-wise.vercel.app",
             logo: "https://www.dealwise.com/logo.png",
             contactPoint: [
               {
                 "@type": "ContactPoint",
-                email: "iodev404@gmail.com",
+                email: "dealwise@gmail.com",
                 telephone: "+63 999 857 1234",
                 contactType: "customer service",
               },
@@ -217,7 +217,7 @@ function ContactSection() {
             href="mailto:iodev404@gmail.com"
             className="hover:underline text-blue-600"
           >
-            iodev404@gmail.com
+            dealwise@gmail.com
           </a>
         </li>
 
@@ -229,7 +229,7 @@ function ContactSection() {
             rel="noopener noreferrer"
             className="hover:underline text-purple-600"
           >
-            www.dealwise.com
+            www.deal-wise.vercel.app
           </a>
         </li>
       </ul>

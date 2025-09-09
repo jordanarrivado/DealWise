@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Swal from "sweetalert2";
+import axios from "axios";
 
 interface Offer {
   merchant: string;
@@ -195,6 +196,33 @@ export default function AddProduct() {
     }
   };
 
+  const handleAutofill = async () => {
+    if (!form.title.trim()) {
+      return Swal.fire("Error", "Enter a phone name first", "error");
+    }
+
+    try {
+      setLoading(true);
+      const { data } = await axios.post("/api/fill-product", {
+        productName: form.title,
+      });
+
+      setForm((prev) => ({
+        ...prev,
+        ...data,
+        offers: prev.offers,
+        imageBase64: prev.imageBase64,
+      }));
+
+      Swal.fire("Success", "Specs autofilled!", "success");
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Failed to autofill specs", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h2 className="text-3xl font-bold mb-6 text-center">Add Product</h2>
@@ -210,6 +238,14 @@ export default function AddProduct() {
           className="w-full border p-3 rounded-lg"
           required
         />
+        <button
+          type="button"
+          onClick={handleAutofill}
+          className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+          disabled={loading}
+        >
+          {loading ? "Autofilling..." : "Autofill Specs"}
+        </button>
         <input
           type="text"
           name="category"

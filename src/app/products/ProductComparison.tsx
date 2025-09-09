@@ -6,6 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import clsx from "clsx";
 import { ProductComparisonProps } from "@/types/product";
+import AdBanner from "@/components/AdBanner";
+import Script from "next/script";
 
 type SortOption = "priceLow" | "rating";
 
@@ -52,9 +54,55 @@ export default function ProductComparison({
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-8">
       {/* Heading */}
+      <AdBanner />
       <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
         🔥 Best Deal Products
       </h2>
+
+      <Script
+        id="product-comparison-schema"
+        type="application/ld+json"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            itemListElement: filteredAndSortedProducts.map(
+              (product, index) => ({
+                "@type": "Product",
+                position: index + 1,
+                name: product.title,
+                image: product.image,
+                description: product.desc?.join(", "),
+                category: product.category,
+                offers: product.offers.map((offer) => ({
+                  "@type": "Offer",
+                  url: offer.url,
+                  priceCurrency: "PHP", // 👈 adjust currency
+                  price: offer.price,
+                  availability: "https://schema.org/InStock",
+                  seller: {
+                    "@type": "Organization",
+                    name: offer.merchant,
+                  },
+                })),
+                ...(product.maxRating
+                  ? {
+                      aggregateRating: {
+                        "@type": "AggregateRating",
+                        ratingValue: product.maxRating,
+                        reviewCount: product.offers.reduce(
+                          (acc, o) => acc + (o.reviews || 0),
+                          0
+                        ),
+                      },
+                    }
+                  : {}),
+              })
+            ),
+          }),
+        }}
+      />
 
       {/* Search & Category Filter */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 w-full px-2 sm:px-0 gap-4">
@@ -153,7 +201,7 @@ export default function ProductComparison({
 
               {/* Description */}
               {product.desc && (
-                <div className="px-6 sm:px-8 pb-4 text-sm text-gray-700 dark:text-gray-300 relative z-10 space-y-1">
+                <div className="px-6 sm:px-8 pb-4 text-sm text-gray-700 dark:text-gray-300 relative z-10 space-y-1 text-center">
                   {product.desc.map((line, i) => (
                     <p key={i}>{line}</p>
                   ))}
@@ -229,6 +277,7 @@ export default function ProductComparison({
           ))}
         </div>
       )}
+      <AdBanner />
     </div>
   );
 }

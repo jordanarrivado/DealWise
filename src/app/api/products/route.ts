@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Product from "@/models/Product";
 import cloudinary from "@/lib/cloudinary";
-import type { Product as ProductType, Offer } from "@/types/product";
+import { PlatformOffer as Offer } from "@/types/Platform";
+import type { Product as ProductType } from "@/types/product";
 
 const handleError = (err: unknown, endpoint: string) => {
   if (err instanceof Error) console.error(`${endpoint} error:`, err.message);

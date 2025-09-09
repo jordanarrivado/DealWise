@@ -12,7 +12,7 @@ interface OfferForm {
   reviewsStr: string;
 }
 
-const defaultMerchants = ["Shopee", "Lazada", "Amazon", "eBay"];
+const defaultMerchants = ["TikTok", "Shopee", "Lazada", "Amazon", "eBay"];
 
 export default function PhoneForm() {
   const [form, setForm] = useState({
@@ -178,6 +178,34 @@ export default function PhoneForm() {
     }
   };
 
+  // Add this function
+  const handleAutofill = async () => {
+    if (!form.name.trim()) {
+      return Swal.fire("Error", "Enter a phone name first", "error");
+    }
+
+    try {
+      setLoading(true);
+      const { data } = await axios.post("/api/fill-phone", {
+        phoneName: form.name,
+      });
+
+      setForm((prev) => ({
+        ...prev,
+        ...data, // merge autofilled data
+        offers: prev.offers, // keep offers untouched
+        imageBase64: prev.imageBase64, // keep image untouched
+      }));
+
+      Swal.fire("Success", "Specs autofilled!", "success");
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Failed to autofill specs", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <form className="max-w-3xl mx-auto p-4 space-y-6" onSubmit={handleSubmit}>
       <h2 className="text-2xl font-bold text-center">Add New Phone</h2>
@@ -195,6 +223,14 @@ export default function PhoneForm() {
         }`}
         required
       />
+      <button
+        type="button"
+        onClick={handleAutofill}
+        className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+        disabled={loading}
+      >
+        {loading ? "Autofilling..." : "Autofill Specs"}
+      </button>
       <div className="mt-1 h-5 text-sm">
         {checkingName && <span className="text-gray-500">Checking...</span>}
         {!checkingName && nameExists && (

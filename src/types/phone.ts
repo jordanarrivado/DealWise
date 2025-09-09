@@ -1,11 +1,5 @@
 // "@/types/product.ts"
-export interface PlatformOffer {
-  merchant: string;
-  price: number;
-  url: string;
-  rating: number;
-  reviews: number;
-}
+import { PlatformOffer } from "@/types/Platform";
 
 export interface Phone {
   name: string;
@@ -18,3 +12,5 @@ export interface Phone {
   image: string;
   offers: PlatformOffer[];
 }
+
+

@@ -6,7 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import axios from "axios";
 import clsx from "clsx";
-import { Phone, PlatformOffer } from "@/types/phone";
+import { PlatformOffer } from "@/types/Platform";
+import { Phone } from "@/types/phone";
 
 interface BudgetPhonesRankingProps {
   title: string;
@@ -79,9 +80,8 @@ export default function BudgetPhonesRanking({
   return (
     <div className="max-w-7xl mx-auto p-6">
       <h2 className="text-3xl font-bold text-center mb-6 text-gray-900 dark:text-gray-100">
-        📱 Top Budget Phones under ₱10,000
+        📱 Top Budget Phones under ₱10,000 in 2025
       </h2>
-
       {/* Sort Controls */}
       <div className="flex flex-col sm:flex-row justify-center mb-6 gap-3">
         <button
@@ -123,7 +123,7 @@ export default function BudgetPhonesRanking({
 
       {/* Desktop / Tablet Table View */}
       <div className="overflow-x-auto hidden md:block">
-        <table className="min-w-[700px] w-full border-collapse rounded-xl overflow-hidden shadow-lg">
+        <table className="min-w-[700px] w-full border-collapse rounded-xl overflow-hidden shadow-lg mt-5">
           <thead>
             <tr className="bg-gradient-to-r from-blue-600 to-purple-600 text-center text-xs sm:text-sm md:text-base font-semibold text-white uppercase tracking-wide">
               <th className="p-2 sm:p-3 w-[5%]">Rank</th>
@@ -166,7 +166,7 @@ export default function BudgetPhonesRanking({
                   🔋 {phone.battery}
                 </td>
                 <td className="p-2 sm:p-3 text-center">
-                  {phone.antutu.toLocaleString()}
+                  ⚡{phone.antutu.toLocaleString()}
                 </td>
                 <td className="p-2 sm:p-3">
                   <div className="space-y-2">

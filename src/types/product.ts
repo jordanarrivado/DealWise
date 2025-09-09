@@ -1,11 +1,4 @@
-// types/product.ts
-export interface Offer {
-  merchant: string;
-  price: number;
-  url: string;
-  rating: number;
-  reviews: number;
-}
+import { PlatformOffer as Offer } from "@/types/Platform";
 
 export interface Product {
   title: string;

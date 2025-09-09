@@ -1,7 +1,7 @@
 import mongoose, { Schema, model, models } from "mongoose";
-import type { Product as ProductType, Offer } from "@/types/product";
+import { PlatformOffer as Offer } from "@/types/Platform";
+import type { Product as ProductType } from "@/types/product";
 
-// --- Offer schema ---
 const OfferSchema = new Schema<Offer>(
   {
     merchant: { type: String, required: true },
@@ -10,7 +10,7 @@ const OfferSchema = new Schema<Offer>(
     rating: { type: Number, default: 0 },
     reviews: { type: Number, default: 0 },
   },
-  { _id: false } // subdocuments don't need their own _id
+  { _id: false } 
 );
 
 // --- Product schema ---

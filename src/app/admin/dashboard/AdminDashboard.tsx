@@ -21,13 +21,21 @@ import {
   FaSignOutAlt,
   FaBars,
   FaTimes,
-  FaLayerGroup,
+  FaMobile,
+  FaLaptop,
+  FaBook,
+  FaPencilAlt,
+  FaHeadphones,
 } from "react-icons/fa";
 import { useProductCounts } from "../../hooks/useProductCounts";
 import PhoneForm from "../add-product/PhoneForm";
 import AddPhone from "../add-phone/AddPhone";
-import Items from "./Items";
+import AddSketchbook from "../add-sketchpad/SketchpadForm";
+import PencilForm from "../add-pencil/PencilForm";
+import Items from "./manage-items/Items";
 import ClickTrack from "./ClickTrack";
+import LaptopForm from "../add-laptop/LaptopForm";
+import HeadphoneForm from "../add-headphone/HeadphoneForm";
 
 // ---- New types ----
 interface ChartData {
@@ -37,19 +45,102 @@ interface ChartData {
 
 type ClickData = { merchant: string; count: number };
 
+// ---- Sidebar links config ----
+const sidebarLinks = [
+  { id: "dashboard", label: "Dashboard", icon: <FaBox /> },
+  { id: "products", label: "Products", icon: <FaBox /> },
+  { id: "addItems", label: "Add Items", icon: <FaPlus /> },
+  { id: "clickTrack", label: "Click Tracking", icon: <FaClipboardList /> },
+  { id: "settings", label: "Settings", icon: <FaCog /> },
+];
+
+// ---- Add Items Sub-tabs ----
+const addTabs = [
+  {
+    id: "phoneForm",
+    label: "Normal Product",
+    icon: <FaBox />,
+    component: <PhoneForm />,
+  },
+  {
+    id: "addPhone",
+    label: "Add Phone",
+    icon: <FaMobile />,
+    component: <AddPhone />,
+  },
+  {
+    id: "addLaptop",
+    label: "Add Laptop",
+    icon: <FaLaptop />,
+    component: <LaptopForm />,
+  },
+  {
+    id: "addSketchbook",
+    label: "Add Sketchbook",
+    icon: <FaBook />,
+    component: <AddSketchbook />,
+  },
+  {
+    id: "addPencil",
+    label: "Add Pencil",
+    icon: <FaPencilAlt />,
+    component: <PencilForm />,
+  },
+  {
+    id: "addHeadphone",
+    label: "Add Headphone",
+    icon: <FaHeadphones />,
+    component: <HeadphoneForm />,
+  },
+];
+
+// ---- User Dropdown ----
+function UserDropdown({
+  session,
+  onLogout,
+}: {
+  session: any;
+  onLogout: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2"
+      >
+        <FaBell className="text-gray-600 dark:text-gray-300" />
+        <div className="w-9 h-9 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center text-white font-bold">
+          {session?.user?.email?.[0]?.toUpperCase() || "A"}
+        </div>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+          <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b dark:border-gray-600">
+            {session?.user?.email || "No Email"}
+          </div>
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-700 rounded-b"
+          >
+            <FaSignOutAlt /> Logout
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---- Main Dashboard ----
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    | "dashboard"
-    | "phones"
-    | "orders"
-    | "addProduct"
-    | "addRank"
-    | "products"
-    | "clickTrack"
+    "dashboard" | "products" | "addItems" | "clickTrack" | "settings" | "orders"
   >("dashboard");
+  const [activeAddTab, setActiveAddTab] = useState("phoneForm");
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const { counts, loading } = useProductCounts();
   const { data: session } = useSession();
@@ -68,7 +159,22 @@ export default function AdminDashboard() {
     {
       title: "Phones Only",
       value: loading ? "..." : counts.phones,
-      icon: <FaBox />,
+      icon: <FaMobile />,
+    },
+    {
+      title: "Headphones Only",
+      value: loading ? "..." : counts.headphones,
+      icon: <FaHeadphones />,
+    },
+    {
+      title: "Sketchbook Only",
+      value: loading ? "..." : counts.sketchPad,
+      icon: <FaBook />,
+    },
+    {
+      title: "Pencil Only",
+      value: loading ? "..." : counts.pencil,
+      icon: <FaPencilAlt />,
     },
     { title: "Total Orders", value: 87, icon: <FaClipboardList /> },
     { title: "Revenue", value: "₱250,000", icon: <FaBox /> },
@@ -78,13 +184,12 @@ export default function AdminDashboard() {
     const fetchClicks = async () => {
       try {
         const res = await fetch("/api/trackClick");
-        const data: unknown = await res.json();
+        const data: ClickData[] = await res.json();
 
-        // Ensure we only process valid data
         if (Array.isArray(data)) {
-          const grouped = (data as ClickData[]).reduce<Record<string, number>>(
-            (acc, item) => {
-              acc[item.merchant] = (acc[item.merchant] || 0) + item.count;
+          const grouped = data.reduce<Record<string, number>>(
+            (acc, { merchant, count }) => {
+              acc[merchant] = (acc[merchant] || 0) + count;
               return acc;
             },
             {}
@@ -101,6 +206,7 @@ export default function AdminDashboard() {
         console.error("Failed to load chart data:", err);
       }
     };
+
     fetchClicks();
   }, []);
 
@@ -130,65 +236,21 @@ export default function AdminDashboard() {
             <FaTimes />
           </button>
         </div>
+
         <nav className="flex flex-col mt-4 gap-2 h-[calc(100%-4rem)]">
-          <button
-            onClick={() => setActiveTab("dashboard")}
-            className={`flex items-center gap-3 px-4 py-2 rounded ${
-              activeTab === "dashboard"
-                ? "bg-blue-600 text-white"
-                : "hover:bg-gray-200 dark:hover:bg-gray-700"
-            }`}
-          >
-            <FaBox /> Dashboard
-          </button>
-
-          <button
-            onClick={() => setActiveTab("products")}
-            className={`flex items-center gap-3 px-4 py-2 rounded ${
-              activeTab === "products"
-                ? "bg-blue-600 text-white"
-                : "hover:bg-gray-200 dark:hover:bg-gray-700"
-            }`}
-          >
-            <FaBox /> Products
-          </button>
-
-          <button
-            onClick={() => setActiveTab("addRank")}
-            className={`flex items-center gap-3 px-4 py-2 rounded ${
-              activeTab === "addRank"
-                ? "bg-blue-600 text-white"
-                : "hover:bg-gray-200 dark:hover:bg-gray-700"
-            }`}
-          >
-            <FaLayerGroup /> <FaPlus />
-            Add Ranking
-          </button>
-
-          <button
-            onClick={() => setActiveTab("addProduct")}
-            className={`flex items-center gap-3 px-4 py-2 rounded ${
-              activeTab === "addProduct"
-                ? "bg-blue-600 text-white"
-                : "hover:bg-gray-200 dark:hover:bg-gray-700"
-            }`}
-          >
-            <FaPlus /> Add Product
-          </button>
-          <button
-            onClick={() => setActiveTab("clickTrack")}
-            className={`flex items-center gap-3 px-4 py-2 rounded ${
-              activeTab === "clickTrack"
-                ? "bg-blue-600 text-white"
-                : "hover:bg-gray-200 dark:hover:bg-gray-700"
-            }`}
-          >
-            <FaClipboardList /> Click Tracking
-          </button>
-
-          <button className="flex items-center gap-3 px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
-            <FaCog /> Settings
-          </button>
+          {sidebarLinks.map((link) => (
+            <button
+              key={link.id}
+              onClick={() => setActiveTab(link.id as typeof activeTab)}
+              className={`flex items-center gap-3 px-4 py-2 rounded ${
+                activeTab === link.id
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-gray-200 dark:hover:bg-gray-700"
+              }`}
+            >
+              {link.icon} {link.label}
+            </button>
+          ))}
         </nav>
       </aside>
 
@@ -214,36 +276,15 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Avatar Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2"
-            >
-              <FaBell className="text-gray-600 dark:text-gray-300" />
-              <div className="w-9 h-9 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center text-white font-bold">
-                {session?.user?.email?.[0]?.toUpperCase() || "A"}
-              </div>
-            </button>
-
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-                <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b dark:border-gray-600">
-                  {session?.user?.email || "No Email"}
-                </div>
-                <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-700 rounded-b"
-                >
-                  <FaSignOutAlt /> Logout
-                </button>
-              </div>
-            )}
-          </div>
+          <UserDropdown
+            session={session}
+            onLogout={() => signOut({ callbackUrl: "/" })}
+          />
         </header>
 
         {/* Dashboard Content */}
         <main className="p-4 sm:p-6 flex-1 overflow-y-auto">
+          {/* ---- Dashboard ---- */}
           {activeTab === "dashboard" && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -283,22 +324,40 @@ export default function AdminDashboard() {
             </>
           )}
 
-          {activeTab === "addProduct" && (
-            <div className="max-w-3xl mx-auto">
-              <PhoneForm />
+          {/* ---- Add Items (with sub-tabs) ---- */}
+          {activeTab === "addItems" && (
+            <div className="max-w-4xl mx-auto">
+              {/* Sub-tab navigation */}
+              <div className="flex gap-2 mb-4 flex-wrap">
+                {addTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveAddTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                      activeAddTab === tab.id
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    {tab.icon} {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Active form */}
+              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                {addTabs.find((tab) => tab.id === activeAddTab)?.component}
+              </div>
             </div>
           )}
 
-          {activeTab === "addRank" && (
-            <div className="max-w-3xl mx-auto">
-              <AddPhone />
-            </div>
-          )}
-
+          {/* ---- Products ---- */}
           {activeTab === "products" && <Items />}
 
+          {/* ---- Click Tracking ---- */}
           {activeTab === "clickTrack" && <ClickTrack />}
 
+          {/* ---- Orders ---- */}
           {activeTab === "orders" && (
             <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
               <p className="p-4 text-center text-gray-500 dark:text-gray-300">

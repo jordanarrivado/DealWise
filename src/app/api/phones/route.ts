@@ -160,3 +160,83 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
+
+// Inside your route file
+
+export async function PUT(req: Request) {
+  try {
+    await connectDB();
+    const { id, ...data } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: "Phone ID is required." }, { status: 400 });
+    }
+
+    const phone = await Phone.findById(id);
+    if (!phone) {
+      return NextResponse.json({ error: "Phone not found." }, { status: 404 });
+    }
+
+    // Handle image update
+    let imageUrl = phone.image;
+    if (data.imageBase64) {
+      try {
+        // Delete old image if exists
+        if (phone.image) {
+          const publicId = phone.image.split("/phones/")[1]?.split(".")[0];
+          if (publicId) await cloudinary.uploader.destroy(`phones/${publicId}`);
+        }
+        const upload = await cloudinary.uploader.upload(data.imageBase64, { folder: "phones" });
+        imageUrl = upload.secure_url;
+      } catch (err) {
+        console.warn("Cloudinary upload failed, keeping old image.", err);
+      }
+    }
+
+    // Update phone fields
+    phone.name = data.name || phone.name;
+    phone.gamingScore = Number(data.gamingScore) || phone.gamingScore;
+    phone.antutu = Number(data.antutu) || phone.antutu;
+    phone.camera = data.camera || phone.camera;
+    phone.battery = data.battery || phone.battery;
+    phone.display = data.display || phone.display;
+    phone.chipset = data.chipset || phone.chipset;
+    phone.image = imageUrl;
+
+    await phone.save();
+
+    // Update offers: remove old ones, insert new
+    if (Array.isArray(data.offers)) {
+      await PhonesOffers.deleteMany({ phoneId: id });
+      await PhonesOffers.insertMany(
+        data.offers.map((offer: OfferInput) => ({
+          phoneId: id,
+          merchant: offer.merchant,
+          price: Number(offer.price),
+          url: offer.url,
+          rating: Number(offer.rating) || 0,
+          reviews: Number(offer.reviews) || 0,
+        }))
+      );
+    }
+
+    const offers = await PhonesOffers.find({ phoneId: id }).lean();
+
+    return NextResponse.json({
+      ...phone.toObject(),
+      offers: offers.map((o) => ({
+        merchant: o.merchant,
+        price: Number(o.price),
+        url: o.url,
+        rating: Number(o.rating) || 0,
+        reviews: Number(o.reviews) || 0,
+      })),
+    });
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error("PUT /api/phones error:", err.message);
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
