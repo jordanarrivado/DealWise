@@ -11,8 +11,9 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     async signIn({ user }: { user: User }) {
-      const allowedEmail = process.env.ALLOWED_EMAIL;
-      return user.email === allowedEmail;
+      const allowedEmail1 = process.env.ALLOWED_EMAIL1;
+      const allowedEmail2 = process.env.ALLOWED_EMAIL2;
+      return user.email === allowedEmail1 || user.email === allowedEmail2;
     },
   },
 };
