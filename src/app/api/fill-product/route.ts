@@ -44,11 +44,14 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(specs);
-  } catch (err: any) {
-    console.error("Autofill error:", err);
-    return NextResponse.json(
-      { error: err.message || "Server error" },
-      { status: 500 }
-    );
-  }
+  } catch (err: unknown) {
+      console.error("Autofill error:", err);
+
+      let message = "Server error";
+      if (err instanceof Error) {
+        message = err.message;
+      }
+
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
 }

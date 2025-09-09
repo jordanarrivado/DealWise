@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, ChangeEvent } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import axios from "axios";
 import Swal from "sweetalert2";
 
+// ---- Types ----
 interface Offer {
   merchant: string;
   price: number;
@@ -25,9 +26,16 @@ interface Laptop {
   performanceScore: number;
   offers: Offer[];
 }
+type OfferKey = keyof Offer;
 
 type SortOption = "priceLow" | "rating";
 
+interface LaptopFormData extends Omit<Laptop, "_id"> {
+  offers: Offer[];
+  imagePreview?: string | ArrayBuffer | null;
+}
+
+// ---- Component ----
 export default function Laptop() {
   const [sortBy, setSortBy] = useState<SortOption>("priceLow");
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,9 +44,18 @@ export default function Laptop() {
 
   // Edit state
   const [editingLaptop, setEditingLaptop] = useState<Laptop | null>(null);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<LaptopFormData>({
+    name: "",
+    image: "",
+    processor: "",
+    ram: "",
+    storage: "",
+    display: "",
+    performanceScore: 0,
+    offers: [],
+  });
 
-  // Fetch laptops
+  // ---- Fetch laptops ----
   useEffect(() => {
     const fetchLaptops = async () => {
       try {
@@ -53,9 +70,9 @@ export default function Laptop() {
     fetchLaptops();
   }, []);
 
-  // Delete handler
+  // ---- Delete laptop ----
   const handleDelete = async (id: string) => {
-    Swal.fire({
+    const result = await Swal.fire({
       title: "Are you sure?",
       text: "This laptop will be permanently deleted.",
       icon: "warning",
@@ -63,32 +80,40 @@ export default function Laptop() {
       confirmButtonColor: "#d33",
       cancelButtonColor: "#3085d6",
       confirmButtonText: "Yes, delete it!",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await axios.delete("/api/laptops", { data: { _id: id } });
-          setItems((prev) => prev.filter((l) => l._id !== id));
-          Swal.fire("Deleted!", "The laptop has been removed.", "success");
-        } catch (err) {
-          console.error("Failed to delete laptop:", err);
-          Swal.fire("Error", "Failed to delete laptop", "error");
-        }
-      }
     });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete("/api/laptops", { data: { _id: id } });
+        setItems((prev) => prev.filter((l) => l._id !== id));
+        Swal.fire("Deleted!", "The laptop has been removed.", "success");
+      } catch (err) {
+        console.error("Failed to delete laptop:", err);
+        Swal.fire("Error", "Failed to delete laptop", "error");
+      }
+    }
   };
 
-  // Edit handlers
+  // ---- Edit handlers ----
   const handleEdit = (laptop: Laptop) => {
     setEditingLaptop(laptop);
     setFormData({ ...laptop });
   };
 
-  const handleOfferChange = (index: number, field: keyof Offer, value: any) => {
+  const handleOfferChange = (
+    index: number,
+    field: OfferKey,
+    value: string | number
+  ) => {
     const newOffers = [...formData.offers];
-    newOffers[index][field] =
-      field === "price" || field === "rating" || field === "reviews"
-        ? Number(value)
-        : value;
+
+    // Narrow based on field type
+    if (field === "price" || field === "rating" || field === "reviews") {
+      newOffers[index][field] = Number(value) as Offer[typeof field];
+    } else {
+      newOffers[index][field] = String(value) as Offer[typeof field];
+    }
+
     setFormData({ ...formData, offers: newOffers });
   };
 
@@ -96,7 +121,7 @@ export default function Laptop() {
     setFormData({
       ...formData,
       offers: [
-        ...(formData.offers || []),
+        ...formData.offers,
         { merchant: "", price: 0, url: "", rating: 0, reviews: 0 },
       ],
     });
@@ -127,9 +152,9 @@ export default function Laptop() {
     }
   };
 
-  // Filter + sort
+  // ---- Filter + sort ----
   const filteredAndSortedLaptops = useMemo(() => {
-    return (items || [])
+    return items
       .filter((laptop) =>
         laptop.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
@@ -153,6 +178,21 @@ export default function Laptop() {
     return (
       <div className="text-center mt-10 text-gray-500">Loading laptops...</div>
     );
+
+  // ---- File input change handler ----
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormData((prev) => ({
+        ...prev,
+        imagePreview: reader.result,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-8">
@@ -220,7 +260,7 @@ export default function Laptop() {
         </div>
       )}
 
-      {/* Edit Modal */}
+      {/* ---- Edit Modal ---- */}
       {editingLaptop && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-900 p-6 rounded-xl w-full max-w-lg overflow-auto max-h-[90vh]">
@@ -232,7 +272,9 @@ export default function Laptop() {
             <div className="flex flex-col items-center mb-4">
               <img
                 src={
-                  formData.imagePreview || formData.image || "/placeholder.png"
+                  typeof formData.imagePreview === "string"
+                    ? formData.imagePreview
+                    : formData.image
                 }
                 alt={formData.name}
                 className="w-32 h-32 object-cover rounded mb-2 border"
@@ -240,70 +282,34 @@ export default function Laptop() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    setFormData({
-                      ...formData,
-                      imageBase64: reader.result,
-                      imagePreview: reader.result,
-                    });
-                  };
-                  reader.readAsDataURL(file);
-                }}
+                onChange={handleFileChange}
                 className="text-sm"
               />
             </div>
 
             {/* Laptop Details */}
-            <input
-              type="text"
-              placeholder="Name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              className="w-full mb-2 border px-3 py-2 rounded"
-            />
-            <input
-              type="text"
-              placeholder="Processor"
-              value={formData.processor}
-              onChange={(e) =>
-                setFormData({ ...formData, processor: e.target.value })
-              }
-              className="w-full mb-2 border px-3 py-2 rounded"
-            />
-            <input
-              type="text"
-              placeholder="RAM"
-              value={formData.ram}
-              onChange={(e) =>
-                setFormData({ ...formData, ram: e.target.value })
-              }
-              className="w-full mb-2 border px-3 py-2 rounded"
-            />
-            <input
-              type="text"
-              placeholder="Storage"
-              value={formData.storage}
-              onChange={(e) =>
-                setFormData({ ...formData, storage: e.target.value })
-              }
-              className="w-full mb-2 border px-3 py-2 rounded"
-            />
-            <input
-              type="text"
-              placeholder="Display"
-              value={formData.display}
-              onChange={(e) =>
-                setFormData({ ...formData, display: e.target.value })
-              }
-              className="w-full mb-2 border px-3 py-2 rounded"
-            />
+            {[
+              { key: "name", placeholder: "Name" },
+              { key: "processor", placeholder: "Processor" },
+              { key: "ram", placeholder: "RAM" },
+              { key: "storage", placeholder: "Storage" },
+              { key: "display", placeholder: "Display" },
+            ].map((field) => (
+              <input
+                key={field.key}
+                type="text"
+                placeholder={field.placeholder}
+                value={formData[field.key as keyof LaptopFormData] as string}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    [field.key]: e.target.value,
+                  })
+                }
+                className="w-full mb-2 border px-3 py-2 rounded"
+              />
+            ))}
+
             <input
               type="number"
               placeholder="Performance Score"
@@ -320,53 +326,34 @@ export default function Laptop() {
             {/* Offers */}
             <div className="mt-4">
               <h4 className="font-semibold mb-2">Offers</h4>
-              {formData.offers?.map((offer: Offer, idx: number) => (
+              {formData.offers.map((offer, idx) => (
                 <div key={idx} className="mb-2 border p-2 rounded">
-                  <input
-                    type="text"
-                    placeholder="Merchant"
-                    value={offer.merchant}
-                    onChange={(e) =>
-                      handleOfferChange(idx, "merchant", e.target.value)
-                    }
-                    className="w-full mb-1 border px-2 py-1 rounded"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Price"
-                    value={offer.price}
-                    onChange={(e) =>
-                      handleOfferChange(idx, "price", e.target.value)
-                    }
-                    className="w-full mb-1 border px-2 py-1 rounded"
-                  />
-                  <input
-                    type="text"
-                    placeholder="URL"
-                    value={offer.url}
-                    onChange={(e) =>
-                      handleOfferChange(idx, "url", e.target.value)
-                    }
-                    className="w-full mb-1 border px-2 py-1 rounded"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Rating"
-                    value={offer.rating}
-                    onChange={(e) =>
-                      handleOfferChange(idx, "rating", e.target.value)
-                    }
-                    className="w-full mb-1 border px-2 py-1 rounded"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Reviews"
-                    value={offer.reviews}
-                    onChange={(e) =>
-                      handleOfferChange(idx, "reviews", e.target.value)
-                    }
-                    className="w-full mb-1 border px-2 py-1 rounded"
-                  />
+                  {(
+                    ["merchant", "price", "url", "rating", "reviews"] as const
+                  ).map((key) => (
+                    <input
+                      key={key}
+                      type={
+                        key === "price" || key === "rating" || key === "reviews"
+                          ? "number"
+                          : "text"
+                      }
+                      placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                      value={offer[key]}
+                      onChange={(e) =>
+                        handleOfferChange(
+                          idx,
+                          key,
+                          key === "price" ||
+                            key === "rating" ||
+                            key === "reviews"
+                            ? Number(e.target.value)
+                            : e.target.value
+                        )
+                      }
+                      className="w-full mb-1 border px-2 py-1 rounded"
+                    />
+                  ))}
                   <button
                     onClick={() => removeOffer(idx)}
                     className="px-2 py-1 bg-red-500 text-white rounded"

@@ -94,12 +94,19 @@ const addTabs = [
   },
 ];
 
-// ---- User Dropdown ----
+interface SessionUser {
+  email?: string | null;
+}
+
+interface SessionType {
+  user?: SessionUser | null;
+}
+
 function UserDropdown({
   session,
   onLogout,
 }: {
-  session: any;
+  session: SessionType;
   onLogout: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -277,7 +284,7 @@ export default function AdminDashboard() {
           </div>
 
           <UserDropdown
-            session={session}
+            session={session ?? { user: null }}
             onLogout={() => signOut({ callbackUrl: "/" })}
           />
         </header>

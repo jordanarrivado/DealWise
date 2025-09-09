@@ -34,9 +34,13 @@ export default function Pencils() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("priceLow");
 
-  // Edit state
+  // Form types
+  type PencilForm = Omit<Pencil, "_id"> & {
+    offers: Offer[];
+    imageBase64?: string;
+  };
   const [editingItem, setEditingItem] = useState<Pencil | null>(null);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<PencilForm | null>(null);
 
   // Fetch Pencils
   useEffect(() => {
@@ -55,35 +59,36 @@ export default function Pencils() {
 
   // Delete
   const handleDelete = async (id: string) => {
-    Swal.fire({
+    const result = await Swal.fire({
       title: "Are you sure?",
       text: "This pencil will be permanently deleted.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Yes, delete it!",
       confirmButtonColor: "#d33",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await axios.delete(`/api/pencils?id=${id}`);
-          setItems((prev) => prev.filter((p) => p._id !== id));
-          Swal.fire("Deleted!", "Pencil removed.", "success");
-        } catch (err) {
-          console.error("Failed to delete:", err);
-          Swal.fire("Error", "Failed to delete pencil", "error");
-        }
-      }
     });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`/api/pencils?id=${id}`);
+        setItems((prev) => prev.filter((p) => p._id !== id));
+        Swal.fire("Deleted!", "Pencil removed.", "success");
+      } catch (err) {
+        console.error("Failed to delete:", err);
+        Swal.fire("Error", "Failed to delete pencil", "error");
+      }
+    }
   };
 
   // Edit
   const handleEdit = (item: Pencil) => {
     setEditingItem(item);
-    setFormData({ ...item });
+    const { _id, ...rest } = item;
+    setFormData(rest); // remove _id for the form
   };
 
   const handleUpdate = async () => {
-    if (!editingItem) return;
+    if (!editingItem || !formData) return;
     try {
       const { data } = await axios.put("/api/pencils", {
         id: editingItem._id,
@@ -94,6 +99,7 @@ export default function Pencils() {
       );
       Swal.fire("Success", "Pencil updated successfully", "success");
       setEditingItem(null);
+      setFormData(null);
     } catch (err) {
       console.error("Update failed:", err);
       Swal.fire("Error", "Failed to update pencil", "error");
@@ -101,26 +107,34 @@ export default function Pencils() {
   };
 
   // Offers
-  const handleOfferChange = (index: number, field: keyof Offer, value: any) => {
+  const handleOfferChange = (
+    index: number,
+    field: keyof Offer,
+    value: string | number
+  ) => {
+    if (!formData) return;
     const newOffers = [...formData.offers];
-    newOffers[index][field] =
-      field === "price" || field === "rating" || field === "reviews"
-        ? Number(value)
-        : value;
+    if (field === "price" || field === "rating" || field === "reviews") {
+      newOffers[index][field] = Number(value);
+    } else {
+      newOffers[index][field] = String(value);
+    }
     setFormData({ ...formData, offers: newOffers });
   };
 
   const addOffer = () => {
+    if (!formData) return;
     setFormData({
       ...formData,
       offers: [
-        ...(formData.offers || []),
+        ...formData.offers,
         { merchant: "", price: 0, url: "", rating: 0, reviews: 0 },
       ],
     });
   };
 
   const removeOffer = (index: number) => {
+    if (!formData) return;
     const newOffers = [...formData.offers];
     newOffers.splice(index, 1);
     setFormData({ ...formData, offers: newOffers });
@@ -128,7 +142,7 @@ export default function Pencils() {
 
   // Filter + Sort
   const filtered = useMemo(() => {
-    return (items || [])
+    return items
       .filter((i) =>
         i.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
@@ -231,7 +245,7 @@ export default function Pencils() {
       )}
 
       {/* Edit Modal */}
-      {editingItem && (
+      {editingItem && formData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl w-full max-w-lg overflow-auto max-h-[90vh]">
             <h3 className="text-xl font-bold mb-4">Edit {editingItem.title}</h3>
@@ -253,7 +267,7 @@ export default function Pencils() {
                   reader.onload = () => {
                     setFormData({
                       ...formData,
-                      imageBase64: reader.result,
+                      imageBase64: reader.result as string,
                     });
                   };
                   reader.readAsDataURL(file);
@@ -262,55 +276,20 @@ export default function Pencils() {
             </div>
 
             {/* Fields */}
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              placeholder="Title"
-              className="w-full mb-2 border px-3 py-2 rounded"
-            />
-
-            <input
-              type="text"
-              value={formData.hardness}
-              onChange={(e) =>
-                setFormData({ ...formData, hardness: e.target.value })
-              }
-              placeholder="Hardness"
-              className="w-full mb-2 border px-3 py-2 rounded"
-            />
-
-            <input
-              type="text"
-              value={formData.material}
-              onChange={(e) =>
-                setFormData({ ...formData, material: e.target.value })
-              }
-              placeholder="Material"
-              className="w-full mb-2 border px-3 py-2 rounded"
-            />
-
-            <input
-              type="text"
-              value={formData.shape}
-              onChange={(e) =>
-                setFormData({ ...formData, shape: e.target.value })
-              }
-              placeholder="Shape"
-              className="w-full mb-2 border px-3 py-2 rounded"
-            />
-
-            <input
-              type="text"
-              value={formData.color}
-              onChange={(e) =>
-                setFormData({ ...formData, color: e.target.value })
-              }
-              placeholder="Color"
-              className="w-full mb-2 border px-3 py-2 rounded"
-            />
+            {(["title", "hardness", "material", "shape", "color"] as const).map(
+              (key) => (
+                <input
+                  key={key}
+                  type="text"
+                  value={formData[key]}
+                  placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                  onChange={(e) =>
+                    setFormData({ ...formData, [key]: e.target.value })
+                  }
+                  className="w-full mb-2 border px-3 py-2 rounded"
+                />
+              )
+            )}
 
             <label className="flex items-center gap-2 mb-2">
               <input
@@ -326,53 +305,34 @@ export default function Pencils() {
             {/* Offers */}
             <div className="mt-4">
               <h4 className="font-semibold mb-2">Offers</h4>
-              {formData.offers?.map((offer: Offer, idx: number) => (
+              {formData.offers.map((offer, idx) => (
                 <div key={idx} className="mb-2 border p-2 rounded">
-                  <input
-                    type="text"
-                    placeholder="Merchant"
-                    value={offer.merchant}
-                    onChange={(e) =>
-                      handleOfferChange(idx, "merchant", e.target.value)
-                    }
-                    className="w-full mb-1 border px-2 py-1 rounded"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Price"
-                    value={offer.price}
-                    onChange={(e) =>
-                      handleOfferChange(idx, "price", e.target.value)
-                    }
-                    className="w-full mb-1 border px-2 py-1 rounded"
-                  />
-                  <input
-                    type="text"
-                    placeholder="URL"
-                    value={offer.url}
-                    onChange={(e) =>
-                      handleOfferChange(idx, "url", e.target.value)
-                    }
-                    className="w-full mb-1 border px-2 py-1 rounded"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Rating"
-                    value={offer.rating}
-                    onChange={(e) =>
-                      handleOfferChange(idx, "rating", e.target.value)
-                    }
-                    className="w-full mb-1 border px-2 py-1 rounded"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Reviews"
-                    value={offer.reviews}
-                    onChange={(e) =>
-                      handleOfferChange(idx, "reviews", e.target.value)
-                    }
-                    className="w-full mb-1 border px-2 py-1 rounded"
-                  />
+                  {(
+                    ["merchant", "price", "url", "rating", "reviews"] as const
+                  ).map((key) => (
+                    <input
+                      key={key}
+                      type={
+                        key === "price" || key === "rating" || key === "reviews"
+                          ? "number"
+                          : "text"
+                      }
+                      placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                      value={offer[key]}
+                      onChange={(e) =>
+                        handleOfferChange(
+                          idx,
+                          key,
+                          key === "price" ||
+                            key === "rating" ||
+                            key === "reviews"
+                            ? Number(e.target.value)
+                            : e.target.value
+                        )
+                      }
+                      className="w-full mb-1 border px-2 py-1 rounded"
+                    />
+                  ))}
                   <button
                     onClick={() => removeOffer(idx)}
                     className="px-2 py-1 bg-red-500 text-white rounded"
@@ -392,7 +352,10 @@ export default function Pencils() {
             {/* Actions */}
             <div className="flex justify-end gap-2 mt-4">
               <button
-                onClick={() => setEditingItem(null)}
+                onClick={() => {
+                  setEditingItem(null);
+                  setFormData(null);
+                }}
                 className="px-4 py-2 border rounded"
               >
                 Cancel

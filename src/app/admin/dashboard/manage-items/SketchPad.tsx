@@ -26,6 +26,15 @@ interface SketchPad {
   offers: Offer[];
 }
 
+interface SketchPadWithMinMax extends SketchPad {
+  minPrice: number;
+  maxRating: number;
+}
+
+interface FormData extends Omit<SketchPad, "_id"> {
+  imageBase64?: string | ArrayBuffer | null;
+}
+
 type SortOption = "priceLow" | "rating";
 
 export default function SketchPads() {
@@ -36,7 +45,16 @@ export default function SketchPads() {
 
   // Edit state
   const [editingItem, setEditingItem] = useState<SketchPad | null>(null);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<FormData>({
+    title: "",
+    size: "",
+    pageCount: 0,
+    paperGSM: 0,
+    binding: "",
+    type: "",
+    image: "",
+    offers: [],
+  });
 
   // Fetch SketchPads
   useEffect(() => {
@@ -102,12 +120,16 @@ export default function SketchPads() {
   };
 
   // Offers
-  const handleOfferChange = (index: number, field: keyof Offer, value: any) => {
+  const handleOfferChange = <K extends keyof Offer>(
+    index: number,
+    field: K,
+    value: string | number
+  ) => {
     const newOffers = [...formData.offers];
-    newOffers[index][field] =
+    (newOffers[index][field] as Offer[K]) =
       field === "price" || field === "rating" || field === "reviews"
-        ? Number(value)
-        : value;
+        ? (Number(value) as Offer[K])
+        : (value as Offer[K]);
     setFormData({ ...formData, offers: newOffers });
   };
 
@@ -128,20 +150,22 @@ export default function SketchPads() {
   };
 
   // Filter + Sort
-  const filtered = useMemo(() => {
+  const filtered = useMemo((): SketchPadWithMinMax[] => {
     return (items || [])
       .filter((i) =>
         i.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
-      .map((i) => ({
-        ...i,
-        minPrice: i.offers.length
-          ? Math.min(...i.offers.map((o) => o.price))
-          : 0,
-        maxRating: i.offers.length
-          ? Math.max(...i.offers.map((o) => o.rating))
-          : 0,
-      }))
+      .map(
+        (i): SketchPadWithMinMax => ({
+          ...i,
+          minPrice: i.offers.length
+            ? Math.min(...i.offers.map((o) => o.price))
+            : 0,
+          maxRating: i.offers.length
+            ? Math.max(...i.offers.map((o) => o.rating))
+            : 0,
+        })
+      )
       .sort((a, b) => {
         if (sortBy === "priceLow") return a.minPrice - b.minPrice;
         if (sortBy === "rating") return b.maxRating - a.maxRating;

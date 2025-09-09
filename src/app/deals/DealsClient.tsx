@@ -8,6 +8,11 @@ import SketchPadRanking from "../guides/best-budget-sketchpad/SketchPadRanking";
 import HeadphoneRanking from "../guides/budget-quality-headphone/HeadphoneRanking";
 import BadgeCheck from "@/components/BadgeCheck";
 import AdBanner from "@/components/AdBanner";
+import { Headphone } from "./types/headphone";
+import { Laptop } from "./types/laptop";
+import { Phone } from "./types/phone";
+import { Pencil } from "./types/pencil";
+import { SketchPad } from "./types/sketchpad";
 
 export default function DealsClient({
   gamingPhones,
@@ -16,11 +21,11 @@ export default function DealsClient({
   topPencils,
   topSketchPads,
 }: {
-  gamingPhones: any[];
-  budgetLaptops: any[];
-  affordableHeadphones: any[];
-  topPencils: any[];
-  topSketchPads: any[];
+  gamingPhones: Phone[];
+  budgetLaptops: Laptop[];
+  affordableHeadphones: Headphone[];
+  topPencils: Pencil[];
+  topSketchPads: SketchPad[];
 }) {
   const [selectedCategory, setSelectedCategory] = useState("phones");
 

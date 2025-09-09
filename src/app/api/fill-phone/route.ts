@@ -49,11 +49,14 @@ Return in JSON strictly:
     }
 
     return NextResponse.json(specs);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Autofill error:", err);
-    return NextResponse.json(
-      { error: err.message || "Server error" },
-      { status: 500 }
-    );
+
+    let message = "Server error";
+    if (err instanceof Error) {
+      message = err.message;
+    }
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

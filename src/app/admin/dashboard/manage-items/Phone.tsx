@@ -27,6 +27,16 @@ interface Phone {
   offers: Offer[];
 }
 
+interface PhoneWithMinMax extends Phone {
+  minPrice: number;
+  maxRating: number;
+}
+
+interface FormData extends Omit<Phone, "_id"> {
+  imageBase64?: string | ArrayBuffer | null;
+  imagePreview?: string | ArrayBuffer | null;
+}
+
 type SortOption = "priceLow" | "rating";
 
 export default function Phones() {
@@ -37,7 +47,17 @@ export default function Phones() {
 
   // Edit state
   const [editingPhone, setEditingPhone] = useState<Phone | null>(null);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    image: "",
+    chipset: "",
+    gamingScore: 0,
+    antutu: 0,
+    camera: "",
+    battery: "",
+    display: "",
+    offers: [],
+  });
 
   // Fetch phones
   useEffect(() => {
@@ -84,12 +104,16 @@ export default function Phones() {
     setFormData({ ...phone });
   };
 
-  const handleOfferChange = (index: number, field: keyof Offer, value: any) => {
+  const handleOfferChange = <K extends keyof Offer>(
+    index: number,
+    field: K,
+    value: string | number
+  ) => {
     const newOffers = [...formData.offers];
-    newOffers[index][field] =
+    (newOffers[index][field] as Offer[K]) =
       field === "price" || field === "rating" || field === "reviews"
-        ? Number(value)
-        : value;
+        ? (Number(value) as Offer[K])
+        : (value as Offer[K]);
     setFormData({ ...formData, offers: newOffers });
   };
 
@@ -129,20 +153,22 @@ export default function Phones() {
   };
 
   // Filter + sort
-  const filteredAndSortedPhones = useMemo(() => {
+  const filteredAndSortedPhones = useMemo((): PhoneWithMinMax[] => {
     return (items || [])
       .filter((phone) =>
         phone.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
-      .map((phone) => ({
-        ...phone,
-        minPrice: phone.offers.length
-          ? Math.min(...phone.offers.map((o) => o.price))
-          : 0,
-        maxRating: phone.offers.length
-          ? Math.max(...phone.offers.map((o) => o.rating))
-          : 0,
-      }))
+      .map(
+        (phone): PhoneWithMinMax => ({
+          ...phone,
+          minPrice: phone.offers.length
+            ? Math.min(...phone.offers.map((o) => o.price))
+            : 0,
+          maxRating: phone.offers.length
+            ? Math.max(...phone.offers.map((o) => o.rating))
+            : 0,
+        })
+      )
       .sort((a, b) => {
         if (sortBy === "priceLow") return a.minPrice - b.minPrice;
         if (sortBy === "rating") return b.maxRating - a.maxRating;
@@ -220,7 +246,6 @@ export default function Phones() {
       )}
 
       {/* Edit Modal */}
-      {/* Edit Modal */}
       {editingPhone && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-900 p-6 rounded-xl w-full max-w-lg overflow-auto max-h-[90vh]">
@@ -230,7 +255,11 @@ export default function Phones() {
             <div className="flex flex-col items-center mb-4">
               <img
                 src={
-                  formData.imagePreview || formData.image || "/placeholder.png"
+                  (typeof formData.imagePreview === "string"
+                    ? formData.imagePreview
+                    : null) ||
+                  formData.image ||
+                  "/placeholder.png"
                 }
                 alt={formData.name}
                 className="w-32 h-32 object-cover rounded mb-2 border"

@@ -9,32 +9,36 @@ import Pencils from "./Pencil";
 import Headphones from "./Headphone";
 import { useProductCounts } from "../../../hooks/useProductCounts";
 
+type ItemKey =
+  | "phones"
+  | "laptops"
+  | "products"
+  | "sketchpad"
+  | "pencil"
+  | "headphones";
+
 export default function Items() {
-  const [activeItem, setActiveItem] = useState<
-    "phones" | "laptops" | "products" | "sketchpad" | "pencil" | "headphones"
-  >("phones");
+  const [activeItem, setActiveItem] = useState<ItemKey>("phones");
 
   const { counts } = useProductCounts();
+
+  const buttons: { key: ItemKey; label: string; count: number }[] = [
+    { key: "phones", label: "📱 Phones", count: counts.phones },
+    { key: "laptops", label: "💻 Laptops", count: counts.laptop },
+    { key: "headphones", label: "🎧 Headphones", count: counts.headphones },
+    { key: "products", label: "📦 Products", count: counts.products },
+    { key: "sketchpad", label: "📓 Sketchpad", count: counts.sketchPad },
+    { key: "pencil", label: "✏️ Pencils", count: counts.pencil },
+  ];
 
   return (
     <div className="p-4">
       {/* Toggle buttons */}
       <div className="flex gap-3 mb-4 overflow-x-auto whitespace-nowrap px-1">
-        {[
-          { key: "phones", label: "📱 Phones", count: counts.phones },
-          { key: "laptops", label: "💻 Laptops", count: counts.laptop },
-          {
-            key: "headphones",
-            label: "🎧 Headphones",
-            count: counts.headphones,
-          },
-          { key: "products", label: "📦 Products", count: counts.products },
-          { key: "sketchpad", label: "📓 Sketchpad", count: counts.sketchPad },
-          { key: "pencil", label: "✏️ Pencils", count: counts.pencil },
-        ].map((item) => (
+        {buttons.map((item) => (
           <button
             key={item.key}
-            onClick={() => setActiveItem(item.key as any)}
+            onClick={() => setActiveItem(item.key)}
             className={`flex-shrink-0 px-3 sm:px-4 py-2 rounded-lg font-medium text-sm sm:text-base ${
               activeItem === item.key
                 ? "bg-blue-600 text-white"

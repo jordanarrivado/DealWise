@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import PencilModel from "@/models/Pencil";
 import cloudinary from "@/lib/cloudinary";
-
+import { PlatformOffer } from "@/types/Platform";
 // CREATE (POST)
 // CREATE (POST)
 export async function POST(req: Request) {
@@ -59,8 +59,16 @@ export async function GET() {
   }
 }
 
-// UPDATE (PUT)
-// UPDATE (PUT)
+interface updatePencil {
+    title: string;
+    hardness: string;
+    material: string;
+    shape: string;
+    color: string;
+    erasable: string;
+    image?: string;
+    offers: PlatformOffer[];
+}
 export async function PUT(req: Request) {
   try {
     await connectDB();
@@ -70,7 +78,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Pencil ID is required" }, { status: 400 });
     }
 
-    const updateData: any = {
+    const updateData: updatePencil = {
       title: data.title,
       hardness: data.hardness,
       material: data.material,

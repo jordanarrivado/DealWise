@@ -49,10 +49,14 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(specs);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Autofill error:", err);
+     let message = "Server error";
+    if (err instanceof Error) {
+      message = err.message;
+    }
     return NextResponse.json(
-      { error: err.message || "Server error" },
+      { error: message || "Server error" },
       { status: 500 }
     );
   }

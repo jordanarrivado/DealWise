@@ -2,8 +2,25 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import SketchPad from "@/models/SketchPad";
 import cloudinary from "@/lib/cloudinary";
+import { PlatformOffer} from "@/types/Platform";
+
+interface SketchType {
+  _id?: string;
+  title: string;
+  size: string;
+  pageCount: number;
+  paperGSM: number;
+  binding: string;
+  type: string;
+  offers: PlatformOffer[];
+  image: string;
+  imageBase64: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
 // CREATE (POST)
+
 export async function POST(req: Request) {
   try {
     await connectDB();
@@ -53,18 +70,19 @@ export async function GET() {
   }
 }
 
-// UPDATE (PUT)
+
+//PUT
 export async function PUT(req: Request) {
   try {
     await connectDB();
-    const body: any = await req.json();
+    const body: SketchType = await req.json();
 
     if (!body._id) {
       return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
     }
 
     const { imageBase64, ...rest } = body;
-    let updateData: any = { ...rest };
+    let updateData: Partial<SketchType> = { ...rest };
 
     if (imageBase64) {
       const upload = await cloudinary.uploader.upload(imageBase64, {
@@ -89,6 +107,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
+
 
 // DELETE
 export async function DELETE(req: Request) {

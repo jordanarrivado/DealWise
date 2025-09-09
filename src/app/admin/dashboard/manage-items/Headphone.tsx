@@ -24,6 +24,11 @@ interface Headphone {
   offers: Offer[];
 }
 
+interface HeadphoneForm extends Omit<Headphone, "_id"> {
+  imageBase64?: string;
+  imagePreview?: string;
+}
+
 type SortOption = "priceLow" | "rating";
 
 export default function Headphones() {
@@ -33,7 +38,14 @@ export default function Headphones() {
   const [loading, setLoading] = useState(true);
 
   const [editingItem, setEditingItem] = useState<Headphone | null>(null);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<HeadphoneForm>({
+    name: "",
+    image: "",
+    type: "",
+    connectivity: "",
+    batteryLife: "",
+    offers: [],
+  });
 
   // Fetch headphones
   useEffect(() => {
@@ -80,12 +92,16 @@ export default function Headphones() {
     setFormData({ ...item });
   };
 
-  const handleOfferChange = (index: number, field: keyof Offer, value: any) => {
+  const handleOfferChange = <K extends keyof Offer>(
+    index: number,
+    field: K,
+    value: Offer[K] | string
+  ) => {
     const newOffers = [...formData.offers];
     newOffers[index][field] =
       field === "price" || field === "rating" || field === "reviews"
-        ? Number(value)
-        : value;
+        ? (Number(value) as Offer[K])
+        : (value as Offer[K]);
     setFormData({ ...formData, offers: newOffers });
   };
 
@@ -159,7 +175,8 @@ export default function Headphones() {
         🎧 Manage Headphones
       </h2>
 
-      <div className="flex justify-center mb-6">
+      {/* Search + Sort */}
+      <div className="flex justify-center mb-6 gap-4 flex-wrap">
         <input
           type="text"
           placeholder="Search headphones..."
@@ -167,6 +184,14 @@ export default function Headphones() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full sm:max-w-md px-4 py-3 border rounded-lg shadow-sm"
         />
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as SortOption)}
+          className="border px-2 py-2 rounded"
+        >
+          <option value="priceLow">Price: Low to High</option>
+          <option value="rating">Rating</option>
+        </select>
       </div>
 
       {filteredAndSortedItems.length === 0 ? (
@@ -247,8 +272,8 @@ export default function Headphones() {
                   reader.onload = () => {
                     setFormData({
                       ...formData,
-                      imageBase64: reader.result,
-                      imagePreview: reader.result,
+                      imageBase64: reader.result as string,
+                      imagePreview: reader.result as string,
                     });
                   };
                   reader.readAsDataURL(file);
@@ -298,7 +323,7 @@ export default function Headphones() {
             {/* Offers */}
             <div className="mt-4">
               <h4 className="font-semibold mb-2">Offers</h4>
-              {formData.offers?.map((offer: Offer, idx: number) => (
+              {formData.offers.map((offer, idx) => (
                 <div key={idx} className="mb-2 border p-2 rounded">
                   <input
                     type="text"
