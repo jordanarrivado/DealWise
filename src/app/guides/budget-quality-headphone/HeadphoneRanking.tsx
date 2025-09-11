@@ -116,7 +116,7 @@ export default function HeadphoneRanking({ title }: HeadphoneRankingProps) {
               <th className="p-2 sm:p-3 w-[5%]">Rank</th>
               <th className="p-2 sm:p-3 w-[20%]">Headphone</th>
               <th className="p-2 sm:p-3 w-[25%]">Specs</th>
-              <th className="p-2 sm:p-3 w-[50%]">Offers</th>
+              <th className="p-2 sm:p-3 w-[20%]">Offers</th>
             </tr>
           </thead>
           <tbody>

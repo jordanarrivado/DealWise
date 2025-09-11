@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     // Prompt for autofilling phone specs
     const prompt = `
 Product name: ${phoneName}
-Provide all the following info; it must be real. If it doesn't have data, make your best judgement based on specs.
+Provide all the following info; it must be strictly real. If it doesn't have data, make your best judgement based on specs.
 Return in JSON strictly:
 {
   "gamingScore": number (1-10),
